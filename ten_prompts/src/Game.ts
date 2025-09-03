@@ -9,6 +9,8 @@ import { CinematicCamera } from './CinematicCamera';
 import { TreeGenerator } from './world/TreeGenerator';
 import { DayNightCycle } from './DayNightCycle';
 import { HealthSystem } from './HealthSystem';
+import { InventorySystem } from './InventorySystem';
+import { HostileMob } from './entities/HostileMob';
 
 export class Game {
     private renderer: THREE.WebGLRenderer;
@@ -21,8 +23,10 @@ export class Game {
     private cinematicCamera: CinematicCamera;
     private dayNightCycle: DayNightCycle;
     private healthSystem: HealthSystem;
+    private inventorySystem: InventorySystem;
     private directionalLight: THREE.DirectionalLight;
     private ambientLight: THREE.AmbientLight;
+    private hostileMobs: HostileMob[] = [];
     
     private lastTime = 0;
     private frameCount = 0;
@@ -86,16 +90,24 @@ export class Game {
         // Initialize health system
         this.healthSystem = new HealthSystem();
         
+        // Initialize inventory system
+        this.inventorySystem = new InventorySystem();
+        
         // Add torch lights
         this.world.addTorchLights(this.scene);
         
         // Listen for day/night events
         document.addEventListener('nightfall', () => {
-            this.mobManager.spawnZombies(3);
+            this.spawnHostileMobs();
         });
         
         document.addEventListener('dawn', () => {
-            this.mobManager.clearZombies();
+            this.clearHostileMobs();
+        });
+        
+        // Listen for hostile mob attacks
+        document.addEventListener('hostileAttack', (event: any) => {
+            this.healthSystem.takeDamage(event.detail.damage);
         });
     }
     
@@ -183,8 +195,51 @@ export class Game {
         }
         
         this.mobManager.update(deltaTime, this.player.getPosition());
+        this.updateHostileMobs(deltaTime);
         this.world.update();
         this.dayNightCycle.update(deltaTime);
+        this.inventorySystem.update();
+    }
+    
+    private spawnHostileMobs(): void {
+        const playerPos = this.player.getPosition();
+        
+        // Spawn 1-2 hostile mobs around player
+        const count = 1 + Math.floor(Math.random() * 2);
+        
+        for (let i = 0; i < count; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const distance = 30 + Math.random() * 30;
+            
+            const x = playerPos.x + Math.cos(angle) * distance;
+            const z = playerPos.z + Math.sin(angle) * distance;
+            const y = playerPos.y + 10; // Spawn above ground
+            
+            const mob = new HostileMob(x, y, z, this.world);
+            this.hostileMobs.push(mob);
+            this.scene.add(mob.mesh);
+        }
+    }
+    
+    private clearHostileMobs(): void {
+        for (const mob of this.hostileMobs) {
+            this.scene.remove(mob.mesh);
+        }
+        this.hostileMobs = [];
+    }
+    
+    private updateHostileMobs(deltaTime: number): void {
+        const playerPos = this.player.getPosition();
+        
+        for (let i = this.hostileMobs.length - 1; i >= 0; i--) {
+            const mob = this.hostileMobs[i];
+            const isAlive = mob.update(deltaTime, playerPos);
+            
+            if (!isAlive) {
+                this.scene.remove(mob.mesh);
+                this.hostileMobs.splice(i, 1);
+            }
+        }
     }
     
     private render(): void {
