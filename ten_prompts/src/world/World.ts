@@ -4,14 +4,16 @@ import { Chunk, CHUNK_SIZE, CHUNK_HEIGHT } from './Chunk';
 import { BlockType } from './BlockTypes';
 import { BlockTextures } from './BlockTextures';
 import { ChunkMesh } from './ChunkMesh';
+import { BiomeGenerator } from './BiomeGenerator';
 
 export class World {
     private scene: THREE.Scene;
     private chunks = new Map<string, Chunk>();
     private blockMaterials = new Map<BlockType, THREE.MeshLambertMaterial>();
-    private noise2D = createNoise2D();
+    private biomeGenerator = new BiomeGenerator();
     private renderDistance = 4;
     private torchLights: THREE.PointLight[] = [];
+    private grassDecorations: THREE.Mesh[] = [];
     
     constructor(scene: THREE.Scene) {
         this.scene = scene;
@@ -48,23 +50,28 @@ export class World {
                 const worldX = chunkX * CHUNK_SIZE + x;
                 const worldZ = chunkZ * CHUNK_SIZE + z;
                 
-                const height = Math.floor(30 + this.noise2D(worldX * 0.02, worldZ * 0.02) * 20);
-                const grassHeight = height + Math.floor(this.noise2D(worldX * 0.1, worldZ * 0.1) * 3);
+                const terrainData = this.biomeGenerator.generateTerrain(worldX, worldZ);
+                const height = terrainData.height;
                 
                 for (let y = 0; y < CHUNK_HEIGHT; y++) {
                     let blockType = BlockType.AIR;
                     
                     if (y < height - 5) {
                         blockType = BlockType.STONE;
-                    } else if (y < height) {
+                    } else if (y < height - 1) {
                         blockType = BlockType.DIRT;
-                    } else if (y === height && y < grassHeight) {
-                        blockType = BlockType.GRASS;
-                    } else if (y < 25) {
+                    } else if (y === height) {
+                        blockType = terrainData.surfaceBlock;
+                    } else if (this.biomeGenerator.shouldPlaceWater(worldX, worldZ, y)) {
                         blockType = BlockType.WATER;
                     }
                     
                     chunk.setBlock(x, y, z, blockType);
+                }
+                
+                // Add grass decorations
+                if (terrainData.hasGrass && terrainData.surfaceBlock === BlockType.GRASS) {
+                    this.addGrassDecoration(worldX, height + 1, worldZ);
                 }
             }
         }
@@ -186,6 +193,27 @@ export class World {
         }
         
         return { hit: false };
+    }
+    
+    private addGrassDecoration(x: number, y: number, z: number): void {
+        // Create simple grass decoration mesh
+        const geometry = new THREE.PlaneGeometry(0.8, 0.8);
+        const material = new THREE.MeshLambertMaterial({ 
+            color: 0x32CD32, 
+            transparent: true,
+            alphaTest: 0.5,
+            side: THREE.DoubleSide
+        });
+        
+        const grass = new THREE.Mesh(geometry, material);
+        grass.position.set(x + 0.5, y + 0.4, z + 0.5);
+        
+        // Random rotation
+        grass.rotation.y = Math.random() * Math.PI * 2;
+        grass.rotation.x = -Math.PI / 2; // Lay flat on ground
+        
+        this.scene.add(grass);
+        this.grassDecorations.push(grass);
     }
     
     public addTorchLights(scene: THREE.Scene): void {

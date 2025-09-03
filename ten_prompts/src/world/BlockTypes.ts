@@ -10,7 +10,10 @@ export enum BlockType {
     COBBLESTONE = 8,
     PLANKS = 9,
     TORCH = 10,
-    WHEAT = 11
+    WHEAT = 11,
+    CACTUS = 12,
+    FENCE = 13,
+    SANDSTONE = 14
 }
 
 export const BLOCK_COLORS: { [key: number]: number } = {

@@ -59,19 +59,22 @@ export class TreeGenerator {
             const x = Math.floor(centerX + Math.cos(angle) * distance);
             const z = Math.floor(centerZ + Math.sin(angle) * distance);
             
-            // Find ground level
+            // Find ground level and check if suitable for trees
             let groundY = 55;
+            let canPlaceTree = false;
+            
             for (let y = 80; y >= 40; y--) {
                 const blockType = this.world.getBlock(x, y, z);
                 if (blockType === BlockType.GRASS || blockType === BlockType.DIRT) {
                     groundY = y + 1;
+                    canPlaceTree = true;
                     break;
                 }
             }
             
-            // Only place tree if on solid ground and not too close to village
+            // Only place tree if on suitable ground (dirt/grass) and not too close to village
             const distanceFromVillage = Math.sqrt(x * x + z * z);
-            if (distanceFromVillage > 25) {
+            if (canPlaceTree && distanceFromVillage > 25) {
                 this.generateTree(x, groundY, z);
             }
         }

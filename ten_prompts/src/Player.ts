@@ -10,7 +10,7 @@ export class Player {
     private velocity = new THREE.Vector3(0, 0, 0);
     private rotation = new THREE.Euler(0, 0, 0);
     
-    private speed = 8;
+    private speed = 150;
     private jumpPower = 12;
     private gravity = -30;
     private isOnGround = false;
@@ -65,63 +65,37 @@ export class Player {
     private applyPhysics(deltaTime: number): void {
         this.velocity.y += this.gravity * deltaTime;
         
-        const newPosition = this.position.clone();
-        newPosition.add(this.velocity.clone().multiplyScalar(deltaTime));
+        // Apply movement step by step to avoid getting stuck
+        const moveStep = this.velocity.clone().multiplyScalar(deltaTime);
         
-        // Collision detection
-        const playerAABB = {
-            min: new THREE.Vector3(newPosition.x - 0.3, newPosition.y - 1.8, newPosition.z - 0.3),
-            max: new THREE.Vector3(newPosition.x + 0.3, newPosition.y, newPosition.z + 0.3)
-        };
+        // Move horizontally first (X and Z)
+        this.position.x += moveStep.x;
+        this.position.z += moveStep.z;
         
-        // Check Y collision (vertical)
+        // Simple ground detection - find ground level below player
         this.isOnGround = false;
-        const testY = newPosition.y - 1.8;
-        
-        for (let x = Math.floor(playerAABB.min.x); x <= Math.floor(playerAABB.max.x); x++) {
-            for (let z = Math.floor(playerAABB.min.z); z <= Math.floor(playerAABB.max.z); z++) {
-                const blockY = Math.floor(testY);
-                const blockType = this.world.getBlock(x, blockY, z);
-                
-                if (blockType !== BlockType.AIR && blockType !== BlockType.WATER) {
-                    if (this.velocity.y <= 0) {
-                        newPosition.y = blockY + 1 + 1.8;
-                        this.velocity.y = 0;
-                        this.isOnGround = true;
-                    }
+        for (let y = Math.floor(this.position.y); y >= Math.floor(this.position.y) - 3; y--) {
+            const groundBlock = this.world.getBlock(Math.floor(this.position.x), y, Math.floor(this.position.z));
+            if (groundBlock !== BlockType.AIR && groundBlock !== BlockType.WATER) {
+                const groundLevel = y + 1;
+                if (this.position.y <= groundLevel + 0.1) {
+                    this.position.y = groundLevel;
+                    this.velocity.y = 0;
+                    this.isOnGround = true;
                 }
+                break;
             }
         }
         
-        // Check X collision (horizontal)
-        for (let y = Math.floor(playerAABB.min.y); y <= Math.floor(playerAABB.max.y); y++) {
-            for (let z = Math.floor(playerAABB.min.z); z <= Math.floor(playerAABB.max.z); z++) {
-                const blockX = this.velocity.x > 0 ? Math.floor(playerAABB.max.x) : Math.floor(playerAABB.min.x);
-                const blockType = this.world.getBlock(blockX, y, z);
-                
-                if (blockType !== BlockType.AIR && blockType !== BlockType.WATER) {
-                    newPosition.x = this.position.x;
-                    this.velocity.x = 0;
-                    break;
-                }
-            }
+        // Apply vertical movement if not on ground
+        if (!this.isOnGround) {
+            this.position.y += moveStep.y;
         }
         
-        // Check Z collision (horizontal)
-        for (let x = Math.floor(playerAABB.min.x); x <= Math.floor(playerAABB.max.x); x++) {
-            for (let y = Math.floor(playerAABB.min.y); y <= Math.floor(playerAABB.max.y); y++) {
-                const blockZ = this.velocity.z > 0 ? Math.floor(playerAABB.max.z) : Math.floor(playerAABB.min.z);
-                const blockType = this.world.getBlock(x, y, blockZ);
-                
-                if (blockType !== BlockType.AIR && blockType !== BlockType.WATER) {
-                    newPosition.z = this.position.z;
-                    this.velocity.z = 0;
-                    break;
-                }
-            }
+        // Prevent falling through world
+        if (this.position.y < 0) {
+            this.position.y = 60;
         }
-        
-        this.position.copy(newPosition);
     }
     
     private handleMouseLook(input: Input): void {

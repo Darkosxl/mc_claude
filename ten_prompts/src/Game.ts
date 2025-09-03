@@ -7,6 +7,8 @@ import { VillageGenerator } from './world/VillageGenerator';
 import { MobManager } from './entities/MobManager';
 import { CinematicCamera } from './CinematicCamera';
 import { TreeGenerator } from './world/TreeGenerator';
+import { DayNightCycle } from './DayNightCycle';
+import { HealthSystem } from './HealthSystem';
 
 export class Game {
     private renderer: THREE.WebGLRenderer;
@@ -17,6 +19,10 @@ export class Game {
     private input: Input;
     private mobManager: MobManager;
     private cinematicCamera: CinematicCamera;
+    private dayNightCycle: DayNightCycle;
+    private healthSystem: HealthSystem;
+    private directionalLight: THREE.DirectionalLight;
+    private ambientLight: THREE.AmbientLight;
     
     private lastTime = 0;
     private frameCount = 0;
@@ -67,15 +73,30 @@ export class Game {
     }
     
     private setupLighting(): void {
-        const ambientLight = new THREE.AmbientLight(0x404040, 0.8);
-        this.scene.add(ambientLight);
+        this.ambientLight = new THREE.AmbientLight(0x404040, 0.8);
+        this.scene.add(this.ambientLight);
         
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);
-        directionalLight.position.set(50, 100, 50);
-        this.scene.add(directionalLight);
+        this.directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);
+        this.directionalLight.position.set(50, 100, 50);
+        this.scene.add(this.directionalLight);
+        
+        // Initialize day/night cycle
+        this.dayNightCycle = new DayNightCycle(this.scene, this.directionalLight, this.ambientLight);
+        
+        // Initialize health system
+        this.healthSystem = new HealthSystem();
         
         // Add torch lights
         this.world.addTorchLights(this.scene);
+        
+        // Listen for day/night events
+        document.addEventListener('nightfall', () => {
+            this.mobManager.spawnZombies(3);
+        });
+        
+        document.addEventListener('dawn', () => {
+            this.mobManager.clearZombies();
+        });
     }
     
     private setupEventListeners(): void {
@@ -161,8 +182,9 @@ export class Game {
             this.player.update(deltaTime, this.input);
         }
         
-        this.mobManager.update(deltaTime);
+        this.mobManager.update(deltaTime, this.player.getPosition());
         this.world.update();
+        this.dayNightCycle.update(deltaTime);
     }
     
     private render(): void {

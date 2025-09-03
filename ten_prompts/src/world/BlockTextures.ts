@@ -192,4 +192,56 @@ export class BlockTextures {
         texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
         return texture;
     }
+    
+    public static createSandTexture(): THREE.Texture {
+        const canvas = document.createElement('canvas');
+        canvas.width = 64;
+        canvas.height = 64;
+        const ctx = canvas.getContext('2d')!;
+        
+        // Base sand color
+        ctx.fillStyle = '#F4A460';
+        ctx.fillRect(0, 0, 64, 64);
+        
+        // Add sand texture with lighter spots
+        for (let i = 0; i < 200; i++) {
+            const x = Math.random() * 64;
+            const y = Math.random() * 64;
+            const size = Math.random() * 2 + 1;
+            
+            ctx.fillStyle = `rgba(${220 + Math.random() * 35}, ${180 + Math.random() * 35}, ${100 + Math.random() * 20}, 0.6)`;
+            ctx.beginPath();
+            ctx.arc(x, y, size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.magFilter = THREE.NearestFilter;
+        texture.minFilter = THREE.NearestFilter;
+        texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+        return texture;
+    }
+    
+    public static createSandstoneTexture(): THREE.Texture {
+        const canvas = document.createElement('canvas');
+        canvas.width = 64;
+        canvas.height = 64;
+        const ctx = canvas.getContext('2d')!;
+        
+        // Base sandstone color
+        ctx.fillStyle = '#D2B48C';
+        ctx.fillRect(0, 0, 64, 64);
+        
+        // Horizontal layers
+        for (let y = 0; y < 64; y += 8 + Math.random() * 4) {
+            ctx.fillStyle = `rgba(${180 + Math.random() * 40}, ${160 + Math.random() * 40}, ${120 + Math.random() * 30}, 0.3)`;
+            ctx.fillRect(0, y, 64, 2);
+        }
+        
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.magFilter = THREE.NearestFilter;
+        texture.minFilter = THREE.NearestFilter;
+        texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+        return texture;
+    }
 }

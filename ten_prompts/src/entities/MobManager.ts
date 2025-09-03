@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { World } from '../world/World';
 import { BlockType } from '../world/BlockTypes';
+import { Zombie } from './Zombie';
 
 class Mob {
     public position: THREE.Vector3;
@@ -112,6 +113,8 @@ export class MobManager {
     private scene: THREE.Scene;
     private world: World;
     private mobs: Mob[] = [];
+    private zombies: Zombie[] = [];
+    private playerPosition = new THREE.Vector3();
     
     constructor(scene: THREE.Scene, world: World) {
         this.scene = scene;
@@ -133,9 +136,51 @@ export class MobManager {
         }
     }
     
-    public update(deltaTime: number): void {
+    public update(deltaTime: number, playerPos?: THREE.Vector3): void {
+        if (playerPos) {
+            this.playerPosition.copy(playerPos);
+        }
+        
         for (const mob of this.mobs) {
             mob.update(deltaTime, this.mobs);
         }
+        
+        // Update zombies
+        for (let i = this.zombies.length - 1; i >= 0; i--) {
+            const zombie = this.zombies[i];
+            const isAlive = zombie.update(deltaTime, this.playerPosition);
+            
+            if (!isAlive) {
+                this.scene.remove(zombie.mesh);
+                this.zombies.splice(i, 1);
+            }
+        }
+    }
+    
+    public spawnZombies(count: number): void {
+        for (let i = 0; i < count; i++) {
+            // Spawn zombies around player but not too close
+            const angle = Math.random() * Math.PI * 2;
+            const distance = 20 + Math.random() * 30;
+            
+            const x = this.playerPosition.x + Math.cos(angle) * distance;
+            const z = this.playerPosition.z + Math.sin(angle) * distance;
+            const y = 60; // Will fall to ground
+            
+            const zombie = new Zombie(x, y, z, this.world);
+            this.zombies.push(zombie);
+            this.scene.add(zombie.mesh);
+        }
+    }
+    
+    public clearZombies(): void {
+        for (const zombie of this.zombies) {
+            this.scene.remove(zombie.mesh);
+        }
+        this.zombies = [];
+    }
+    
+    public getZombieCount(): number {
+        return this.zombies.length;
     }
 }

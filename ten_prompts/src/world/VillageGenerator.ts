@@ -9,21 +9,24 @@ export class VillageGenerator {
     }
     
     public generateVillage(centerX: number, centerZ: number): void {
-        // Clear and flatten area
-        this.flattenArea(centerX - 20, centerZ - 20, 40, 40, 55);
+        // Find the ground level at village center
+        let groundLevel = 45;
+        for (let y = 60; y >= 40; y--) {
+            const blockType = this.world.getBlock(centerX, y, centerZ);
+            if (blockType !== BlockType.AIR && blockType !== BlockType.WATER) {
+                groundLevel = y + 1;
+                break;
+            }
+        }
         
-        // Generate house at -10, -5
-        this.generateHouse(centerX - 10, centerZ - 5);
-        
-        // Generate farm at 5, -8
-        this.generateFarm(centerX + 5, centerZ - 8);
-        
-        // Generate watchtower at 0, 10
-        this.generateWatchtower(centerX, centerZ + 10);
+        // Generate structures at ground level
+        this.generateHouse(centerX - 10, centerZ - 5, groundLevel);
+        this.generateFarm(centerX + 5, centerZ - 8, groundLevel);
+        this.generateWatchtower(centerX, centerZ + 10, groundLevel);
         
         // Add path connecting structures
-        this.generatePath(centerX - 10, centerZ - 5, centerX + 5, centerZ - 8);
-        this.generatePath(centerX - 10, centerZ - 5, centerX, centerZ + 10);
+        this.generatePath(centerX - 10, centerZ - 5, centerX + 5, centerZ - 8, groundLevel);
+        this.generatePath(centerX - 10, centerZ - 5, centerX, centerZ + 10, groundLevel);
     }
     
     private flattenArea(x: number, z: number, width: number, depth: number, height: number): void {
