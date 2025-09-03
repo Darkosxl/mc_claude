@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minecraft Clone</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: 'Courier New', monospace;
+            background: #87CEEB;
+        }
+        
+        #gameContainer {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+        
+        #hud {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1000;
+        }
+        
+        #crosshair {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 32px;
+            height: 32px;
+        }
+        
+        #crosshair::before, #crosshair::after {
+            content: '';
+            position: absolute;
+            background: white;
+            box-shadow: 1px 1px 0 rgba(0,0,0,0.5);
+        }
+        
+        #crosshair::before {
+            left: 50%;
+            top: 6px;
+            bottom: 6px;
+            width: 2px;
+            transform: translateX(-50%);
+        }
+        
+        #crosshair::after {
+            top: 50%;
+            left: 6px;
+            right: 6px;
+            height: 2px;
+            transform: translateY(-50%);
+        }
+        
+        #fpsCounter {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            font-size: 16px;
+            text-shadow: 1px 1px 0 rgba(0,0,0,0.8);
+            pointer-events: none;
+        }
+        
+        #controls {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            color: white;
+            font-size: 14px;
+            text-shadow: 1px 1px 0 rgba(0,0,0,0.8);
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <div id="hud">
+            <div id="crosshair"></div>
+            <div id="fpsCounter">FPS: --</div>
+            <div id="controls">
+                WASD: Move | Space: Jump | Mouse: Look | 1/2: Block Type | Click: Mine/Place | F5: Cinematic
+            </div>
+        </div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
