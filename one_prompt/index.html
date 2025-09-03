@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Minecraft Clone</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        background: #87CEEB;
+        font-family: Arial, sans-serif;
+      }
+      canvas {
+        display: block;
+      }
+      #crosshair {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 20px;
+        height: 20px;
+        pointer-events: none;
+      }
+      #crosshair::before,
+      #crosshair::after {
+        content: '';
+        position: absolute;
+        background: white;
+        border: 1px solid black;
+      }
+      #crosshair::before {
+        width: 2px;
+        height: 20px;
+        left: 9px;
+      }
+      #crosshair::after {
+        width: 20px;
+        height: 2px;
+        top: 9px;
+      }
+      #ui {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        color: white;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+        font-size: 14px;
+        pointer-events: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="crosshair"></div>
+    <div id="ui">
+      <div>WASD: Move | Mouse: Look | Left Click: Break | Right Click: Place</div>
+      <div id="position"></div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
