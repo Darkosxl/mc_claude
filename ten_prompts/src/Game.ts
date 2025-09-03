@@ -6,6 +6,7 @@ import { BlockType } from './world/BlockTypes';
 import { VillageGenerator } from './world/VillageGenerator';
 import { MobManager } from './entities/MobManager';
 import { CinematicCamera } from './CinematicCamera';
+import { TreeGenerator } from './world/TreeGenerator';
 
 export class Game {
     private renderer: THREE.WebGLRenderer;
@@ -59,6 +60,9 @@ export class Game {
         const villageGen = new VillageGenerator(this.world);
         villageGen.generateVillage(0, 0);
         
+        const treeGen = new TreeGenerator(this.world);
+        treeGen.generateForest(0, 0, 60, 15);
+        
         this.mobManager.spawnMobs();
     }
     
@@ -90,6 +94,14 @@ export class Game {
         });
         
         this.input.onKeyPress('Digit2', () => {
+            this.player.setSelectedBlockType(BlockType.WOOD);
+        });
+        
+        this.input.onKeyPress('Digit3', () => {
+            this.player.setSelectedBlockType(BlockType.PLANKS);
+        });
+        
+        this.input.onKeyPress('Digit4', () => {
             this.player.setSelectedBlockType(BlockType.DIRT);
         });
         

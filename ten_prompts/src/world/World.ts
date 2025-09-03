@@ -2,23 +2,33 @@ import * as THREE from 'three';
 import { createNoise2D } from 'simplex-noise';
 import { Chunk, CHUNK_SIZE, CHUNK_HEIGHT } from './Chunk';
 import { BlockType } from './BlockTypes';
+import { BlockTextures } from './BlockTextures';
+import { ChunkMesh } from './ChunkMesh';
 
 export class World {
     private scene: THREE.Scene;
     private chunks = new Map<string, Chunk>();
-    private chunkMaterial: THREE.MeshLambertMaterial;
+    private blockMaterials = new Map<BlockType, THREE.MeshLambertMaterial>();
     private noise2D = createNoise2D();
     private renderDistance = 4;
     private torchLights: THREE.PointLight[] = [];
     
     constructor(scene: THREE.Scene) {
         this.scene = scene;
-        this.chunkMaterial = new THREE.MeshLambertMaterial({
-            vertexColors: true,
-            transparent: false
-        });
-        
+        this.createBlockMaterials();
         this.generateInitialChunks();
+    }
+    
+    private createBlockMaterials(): void {
+        this.blockMaterials.set(BlockType.STONE, new THREE.MeshLambertMaterial({ map: BlockTextures.createStoneTexture() }));
+        this.blockMaterials.set(BlockType.DIRT, new THREE.MeshLambertMaterial({ map: BlockTextures.createDirtTexture() }));
+        this.blockMaterials.set(BlockType.GRASS, new THREE.MeshLambertMaterial({ map: BlockTextures.createGrassTexture() }));
+        this.blockMaterials.set(BlockType.WOOD, new THREE.MeshLambertMaterial({ map: BlockTextures.createWoodTexture() }));
+        this.blockMaterials.set(BlockType.LEAVES, new THREE.MeshLambertMaterial({ map: BlockTextures.createLeavesTexture() }));
+        this.blockMaterials.set(BlockType.PLANKS, new THREE.MeshLambertMaterial({ map: BlockTextures.createPlanksTexture() }));
+        this.blockMaterials.set(BlockType.COBBLESTONE, new THREE.MeshLambertMaterial({ map: BlockTextures.createStoneTexture() }));
+        this.blockMaterials.set(BlockType.WATER, new THREE.MeshLambertMaterial({ color: 0x4682B4, transparent: true, opacity: 0.7 }));
+        this.blockMaterials.set(BlockType.TORCH, new THREE.MeshLambertMaterial({ color: 0xFFFF00, emissive: 0xFFFF00, emissiveIntensity: 0.3 }));
     }
     
     private generateInitialChunks(): void {
@@ -118,18 +128,20 @@ export class World {
     private rebuildChunkMesh(chunk: Chunk): void {
         if (chunk.mesh) {
             this.scene.remove(chunk.mesh);
-            chunk.mesh.geometry.dispose();
+            if (chunk.mesh.geometry) chunk.mesh.geometry.dispose();
         }
         
-        const geometry = chunk.generateMesh();
-        if (geometry) {
-            chunk.mesh = new THREE.Mesh(geometry, this.chunkMaterial);
-            chunk.mesh.position.set(chunk.x * CHUNK_SIZE, 0, chunk.z * CHUNK_SIZE);
-            chunk.mesh.frustumCulled = true;
-            chunk.mesh.matrixAutoUpdate = false;
-            chunk.mesh.updateMatrix();
-            this.scene.add(chunk.mesh);
+        const chunkMesh = new ChunkMesh();
+        const meshes = chunkMesh.generateMeshes(chunk, this.blockMaterials);
+        
+        // For simplicity, create a group to hold all block type meshes for this chunk
+        const group = new THREE.Group();
+        for (const mesh of meshes) {
+            group.add(mesh);
         }
+        
+        chunk.mesh = group as any;
+        this.scene.add(group);
     }
     
     public raycast(origin: THREE.Vector3, direction: THREE.Vector3, maxDistance: number): {

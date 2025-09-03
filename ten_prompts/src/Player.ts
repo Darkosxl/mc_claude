@@ -131,9 +131,10 @@ export class Player {
         const sensitivity = 0.002;
         
         this.rotation.y -= mouseDelta.x * sensitivity;
-        this.rotation.x -= mouseDelta.y * sensitivity;
+        this.rotation.x += mouseDelta.y * sensitivity; // Fixed: removed negative to fix inversion
         
-        this.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, this.rotation.x));
+        // Clamp vertical rotation to prevent camera flipping
+        this.rotation.x = Math.max(-Math.PI / 2 + 0.1, Math.min(Math.PI / 2 - 0.1, this.rotation.x));
     }
     
     private handleBlockInteraction(input: Input): void {
@@ -167,7 +168,8 @@ export class Player {
     
     private updateCameraPosition(): void {
         this.camera.position.copy(this.position);
-        this.camera.rotation.set(this.rotation.x, this.rotation.y, 0);
+        // Apply rotations in the correct order to prevent gimbal lock
+        this.camera.rotation.set(this.rotation.x, this.rotation.y, 0, 'YXZ');
     }
     
     public setSelectedBlockType(blockType: BlockType): void {
